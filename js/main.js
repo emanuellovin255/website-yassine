@@ -1,5 +1,7 @@
 const WHATSAPP_NUMBER = "34614823021";
 
+document.documentElement.classList.remove("no-js");
+
 // Menú móvil
 const toggle = document.getElementById("menuToggle");
 const nav = document.getElementById("nav");
@@ -54,7 +56,7 @@ form.addEventListener("submit", (event) => {
   const data = new FormData(form);
   const urgente = document.getElementById("urgente").checked;
   const lines = [
-    urgente ? "🚨 *URGENCIA* - Solicitud desde la web" : "Solicitud desde la web",
+    urgente ? "*URGENCIA* - Solicitud desde la web" : "Solicitud desde la web",
     "",
     `*Nombre:* ${data.get("nombre").trim()}`,
     `*Teléfono:* ${data.get("telefono").trim()}`,
@@ -73,3 +75,43 @@ form.querySelectorAll("input, select").forEach((input) =>
     if (input.closest(".field")?.classList.contains("invalid")) setError(input, "");
   })
 );
+
+// Aparición al hacer scroll
+const revealObserver = new IntersectionObserver(
+  (entries) => {
+    entries.forEach((entry) => {
+      if (!entry.isIntersecting) return;
+      entry.target.classList.add("in");
+      revealObserver.unobserve(entry.target);
+    });
+  },
+  { threshold: 0.12, rootMargin: "0px 0px -40px 0px" }
+);
+document.querySelectorAll(".reveal").forEach((el) => {
+  const siblings = [...el.parentElement.children].filter((c) => c.classList.contains("reveal"));
+  el.style.transitionDelay = `${Math.min(siblings.indexOf(el), 5) * 70}ms`;
+  revealObserver.observe(el);
+});
+
+// Inclinación 3D de tarjetas
+const canTilt =
+  window.matchMedia("(hover: hover) and (pointer: fine)").matches &&
+  !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+if (canTilt) {
+  document.querySelectorAll("[data-tilt]").forEach((card) => {
+    card.addEventListener("pointermove", (e) => {
+      const r = card.getBoundingClientRect();
+      const x = (e.clientX - r.left) / r.width;
+      const y = (e.clientY - r.top) / r.height;
+      card.style.transition = "transform .08s, box-shadow .3s, border-color .3s";
+      card.style.transform = `perspective(900px) rotateX(${(0.5 - y) * 10}deg) rotateY(${(x - 0.5) * 12}deg) translateZ(0)`;
+      card.style.setProperty("--mx", `${x * 100}%`);
+      card.style.setProperty("--my", `${y * 100}%`);
+    });
+    card.addEventListener("pointerleave", () => {
+      card.style.transition = "transform .6s cubic-bezier(.2,.8,.2,1), box-shadow .3s, border-color .3s";
+      card.style.transform = "";
+    });
+  });
+}
